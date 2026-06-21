@@ -1,0 +1,79 @@
+[
+  {
+    "id": "12601a67-7217-4c47-b935-a33759588f92",
+    "title": "Implement GET /api/v1/writer/jobs endpoint",
+    "description": "Tạo endpoint mới với CQRS pattern, pagination, sorting. Module: writer-management.",
+    "status": "pending",
+    "priority": "high",
+    "assignedTo": "backend-developer",
+    "createdBy": "unknown",
+    "parentTaskId": null,
+    "tags": [
+      "writer-management",
+      "backend",
+      "api"
+    ],
+    "context": {
+      "module": "writer-management",
+      "constraints": [
+        "Dùng IObjectMapper (KHÔNG AutoMapper)",
+        "Dùng CQRSDispatcher (KHÔNG MediatR)",
+        "Clean Architecture layers"
+      ]
+    },
+    "result": null,
+    "error": null,
+    "createdAt": "2026-06-21T05:10:06.718Z",
+    "updatedAt": "2026-06-21T05:10:06.719Z",
+    "startedAt": null,
+    "completedAt": null,
+    "reportTo": "orchestrator",
+    "metadata": {}
+  },
+  {
+    "id": "5aaee5ee-3fb1-4663-8183-29c26d7b011b",
+    "title": "Build JobsListPage with filters",
+    "description": "React component showing jobs list with search, filter by status, pagination.",
+    "status": "pending",
+    "priority": "medium",
+    "assignedTo": "frontend-developer",
+    "createdBy": "unknown",
+    "parentTaskId": null,
+    "tags": [
+      "writer-management",
+      "frontend"
+    ],
+    "context": {},
+    "result": null,
+    "error": null,
+    "createdAt": "2026-06-21T05:10:06.734Z",
+    "updatedAt": "2026-06-21T05:10:06.734Z",
+    "startedAt": null,
+    "completedAt": null,
+    "reportTo": "orchestrator",
+    "metadata": {}
+  },
+  {
+    "id": "a082f80c-fa87-4760-8169-7e78990a4338",
+    "title": "Code review: writer-management API changes",
+    "description": "Review tất cả changes trong writer-management module.",
+    "status": "pending",
+    "priority": "medium",
+    "assignedTo": "code-reviewer",
+    "createdBy": "unknown",
+    "parentTaskId": null,
+    "tags": [
+      "writer-management",
+      "review"
+    ],
+    "context": {},
+    "result": null,
+    "error": null,
+    "createdAt": "2026-06-21T05:10:06.752Z",
+    "updatedAt": "2026-06-21T05:10:06.752Z",
+    "startedAt": null,
+    "completedAt": null,
+    "reportTo": "orchestrator",
+    "metadata": {}
+  }
+]
