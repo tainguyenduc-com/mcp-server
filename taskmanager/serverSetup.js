@@ -48,10 +48,23 @@ const minimalTools = [
   "task_find_available",
   "task_report",
   "task_delete_by_status",
+  "task_empty",
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: minimalTools.map(name => ({ name, description: `${name} tool`, inputSchema: { type: "object", properties: {} } })),
+  tools: minimalTools.map(name => {
+    const base = { name, description: `${name} tool`, inputSchema: { type: "object", properties: {} } };
+    if (name === "task_empty") {
+      base.inputSchema = {
+        type: "object",
+        properties: {
+          confirm: { type: "boolean", description: "Xác nhận thực hiện xóa", required: true }
+        },
+        required: ["confirm"]
+      };
+    }
+    return base;
+  }),
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
