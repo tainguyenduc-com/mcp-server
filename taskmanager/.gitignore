@@ -2,3 +2,4 @@
 .*
 # Except .gitignore itself
 !.gitignore
+.task/
