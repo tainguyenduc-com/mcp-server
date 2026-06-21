@@ -1,0 +1,54 @@
+[
+  {
+    "id": "01d5456a-6c84-4dfc-ab7d-d40d232c1ec8",
+    "title": "Implement GET /api/v1/writer/jobs endpoint",
+    "description": "Tạo endpoint mới để lấy danh sách jobs. Dùng CQRS pattern.",
+    "status": "pending",
+    "priority": "high",
+    "assignedTo": "backend-developer",
+    "createdBy": "unknown",
+    "parentTaskId": null,
+    "tags": [
+      "writer-management",
+      "backend",
+      "api"
+    ],
+    "context": {
+      "module": "writer-management",
+      "constraints": [
+        "Dùng IObjectMapper (KHÔNG AutoMapper)"
+      ]
+    },
+    "result": null,
+    "error": null,
+    "createdAt": "2026-06-21T07:49:43.571Z",
+    "updatedAt": "2026-06-21T07:49:43.572Z",
+    "startedAt": null,
+    "completedAt": null,
+    "reportTo": "orchestrator",
+    "metadata": {}
+  },
+  {
+    "id": "6215630f-2132-4e3e-b042-808beb56787c",
+    "title": "Build JobsListPage component",
+    "description": "React component với Tailwind CSS",
+    "status": "pending",
+    "priority": "medium",
+    "assignedTo": "frontend-developer",
+    "createdBy": "unknown",
+    "parentTaskId": null,
+    "tags": [
+      "writer-management",
+      "frontend"
+    ],
+    "context": {},
+    "result": null,
+    "error": null,
+    "createdAt": "2026-06-21T07:49:43.586Z",
+    "updatedAt": "2026-06-21T07:49:43.586Z",
+    "startedAt": null,
+    "completedAt": null,
+    "reportTo": "orchestrator",
+    "metadata": {}
+  }
+]
