@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import path from "node:path";
 import { TASK_STORE_DIR, TASKS_FILE, BACKUP_DIR } from "./constants.js";
 
 export function ensureDirectories() {
@@ -19,7 +18,7 @@ export function loadTasks() {
       return JSON.parse(raw);
     }
   } catch (err) {
-    console.error(`[task-manager] Error loading tasks: ${err.message}`);
+    console.error(`[taskmanager] Error loading tasks: ${err.message}`);
   }
   return [];
 }
@@ -30,11 +29,11 @@ export function saveTasks(tasks) {
   try {
     const data = JSON.stringify(tasks, null, 2);
     fs.writeFileSync(tmpFile, data, "utf-8");
-    console.log(`[task-manager] Saved ${tasks.length} tasks`);
+    console.log(`[taskmanager] Saved ${tasks.length} tasks`);
     fs.renameSync(tmpFile, TASKS_FILE);
     return true;
   } catch (err) {
-    console.error(`[task-manager] Error saving tasks: ${err.message}`);
+    console.error(`[taskmanager] Error saving tasks: ${err.message}`);
     return false;
   }
 }
@@ -43,19 +42,18 @@ export function backupTasks(tasks) {
   ensureDirectories();
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const backupFile = path.join(BACKUP_DIR, `tasks-${timestamp}.json`);
+    const backupFile = `${BACKUP_DIR}/tasks-${timestamp}.json`;
     fs.writeFileSync(backupFile, JSON.stringify(tasks, null, 2), "utf-8");
-    // Keep last 50 backups
     const backups = fs.readdirSync(BACKUP_DIR)
       .filter(f => f.startsWith("tasks-"))
       .sort()
       .reverse();
     if (backups.length > 50) {
       for (const old of backups.slice(50)) {
-        fs.unlinkSync(path.join(BACKUP_DIR, old));
+        fs.unlinkSync(`${BACKUP_DIR}/${old}`);
       }
     }
   } catch (err) {
-    console.error(`[task-manager] Backup error: ${err.message}`);
+    console.error(`[taskmanager] Backup error: ${err.message}`);
   }
 }
