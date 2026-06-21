@@ -1,0 +1,4 @@
+# Ignore all dot-prefixed files/dirs
+.*
+# Except .gitignore itself
+!.gitignore
