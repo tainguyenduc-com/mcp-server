@@ -1,0 +1,31 @@
+[
+  {
+    "id": "64e45ffb-93e1-4e49-8308-bf8b0a6851fa",
+    "title": "Implement GET /api/v1/writer/jobs endpoint",
+    "description": "Tạo endpoint mới để lấy danh sách jobs. Dùng CQRS pattern.",
+    "status": "pending",
+    "priority": "high",
+    "assignedTo": "backend-developer",
+    "createdBy": "unknown",
+    "parentTaskId": null,
+    "tags": [
+      "writer-management",
+      "backend",
+      "api"
+    ],
+    "context": {
+      "module": "writer-management",
+      "constraints": [
+        "Dùng IObjectMapper (KHÔNG AutoMapper)"
+      ]
+    },
+    "result": null,
+    "error": null,
+    "createdAt": "2026-06-21T07:50:14.314Z",
+    "updatedAt": "2026-06-21T07:50:14.315Z",
+    "startedAt": null,
+    "completedAt": null,
+    "reportTo": "orchestrator",
+    "metadata": {}
+  }
+]
