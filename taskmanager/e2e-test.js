@@ -1,6 +1,40 @@
 #!/usr/bin/env node
 
 /**
+ * End-to-end test using direct taskService calls (no RPC server).
+ */
+
+import * as taskService from "./taskService.js";
+import { assert } from "./test-setup.js";
+
+async function main() {
+  console.log("E2E direct test start");
+  // Reset store
+  const { emptyTasks } = taskService;
+  emptyTasks(true);
+
+  // Create task
+  const task = taskService.createTask({ title: "Direct E2E", assignedTo: "backend-developer", priority: "high" });
+  assert(task.status === "pending", "Task should be pending");
+
+  // Claim
+  const claimed = taskService.claimTask(task.id, "backend-developer");
+  assert(claimed.status === "in_progress", "Claimed status");
+
+  // Update progress
+  const updated = taskService.updateTask(task.id, { progress: 70 });
+  assert(updated.progress === 70, "Progress updated");
+
+  // Report
+  const reported = taskService.reportTask(task.id, { result: { done: true }, summary: "finished" });
+  assert(reported.task.status === "completed", "Reported completed");
+
+  console.log("E2E direct test passed");
+}
+
+main();
+
+/**
  * End-to-end test: simulates full orchestrator → sub-agent flow
  * 
  * Flow:
