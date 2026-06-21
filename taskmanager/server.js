@@ -9,6 +9,7 @@
  * 
  * Tools:
  *   - task_create: Create a new task
+ *   - task_delete: Hard delete a task and all subtasks
  *   - task_claim: Claim a task for an agent
  *   - task_update: Update status/progress/result
  *   - task_list: List tasks with filters
@@ -81,7 +82,7 @@ function loadTasks() {
       return JSON.parse(raw);
     }
   } catch (err) {
-    console.error(`[task-manager] Error loading tasks: ${err.message}`);
+    console.error(`[taskmanager] Error loading tasks: ${err.message}`);
   }
   return [];
 }
@@ -92,11 +93,11 @@ function saveTasks(tasks) {
   try {
      const data = JSON.stringify(tasks, null, 2);
      fs.writeFileSync(tmpFile, data, "utf-8");
-     console.log(`[task-manager] Saved ${tasks.length} tasks`);
+     console.log(`[taskmanager] Saved ${tasks.length} tasks`);
      fs.renameSync(tmpFile, TASKS_FILE);
      return true;
   } catch (err) {
-    console.error(`[task-manager] Error saving tasks: ${err.message}`);
+    console.error(`[taskmanager] Error saving tasks: ${err.message}`);
     return false;
   }
 }
@@ -119,7 +120,7 @@ function backupTasks(tasks) {
       }
     }
   } catch (err) {
-    console.error(`[task-manager] Backup error: ${err.message}`);
+    console.error(`[taskmanager] Backup error: ${err.message}`);
   }
 }
 
@@ -129,6 +130,57 @@ function isValidTransition(currentStatus, newStatus) {
   return VALID_TRANSITIONS[currentStatus]?.includes(newStatus) ?? false;
 }
 
+function deleteTask(taskId) {
+  const tasks = loadTasks();
+  const index = tasks.findIndex(t => t.id === taskId);
+  if (index === -1) throw new Error(`Task not found: ${taskId}`);
+  const deleted = tasks[index];
+  backupTasks(tasks);
+  function collectDescendantIds(parentId) {
+    const ids = [];
+    for (const t of tasks) {
+      if (t.parentTaskId === parentId) {
+        ids.push(t.id);
+        ids.push(...collectDescendantIds(t.id));
+      }
+    }
+    return ids;
+  }
+  const descendantIds = collectDescendantIds(taskId);
+  const all = [taskId, ...descendantIds];
+  const remaining = tasks.filter(t => !all.includes(t.id));
+  saveTasks(remaining);
+  console.log(`[taskmanager] Deleted task ID=${taskId} and ${descendantIds.length} subtask(s)`);
+  return { deleted, subtaskCount: descendantIds.length, subtaskIds: descendantIds };
+}
+
+// ─── task_empty ────────────────────────────────────────────────────────
+function taskEmpty(confirm) {
+  if (!confirm) {
+    throw new Error('Confirmation required to delete .task folder contents');
+  }
+  const targetDir = TASK_STORE_DIR; // .task folder
+  if (!fs.existsSync(targetDir)) {
+    throw new Error(`Task store directory does not exist: ${targetDir}`);
+  }
+  const entries = fs.readdirSync(targetDir);
+  let deleteCount = 0;
+  for (const entry of entries) {
+    const fullPath = path.join(targetDir, entry);
+    // Skip the tasks.json itself, will be recreated later
+    if (entry === 'tasks.json' || entry === 'backups') continue;
+    const stat = fs.lstatSync(fullPath);
+    if (stat.isDirectory()) {
+      fs.rmSync(fullPath, { recursive: true, force: true });
+    } else {
+      fs.unlinkSync(fullPath);
+    }
+    deleteCount++;
+  }
+  // Write fresh empty tasks file
+  fs.writeFileSync(TASKS_FILE, JSON.stringify([], null, 2), 'utf-8');
+  return { deletedCount: deleteCount };
+}
 function createTask(input) {
   // Validation
   if (!input.title || input.title.trim() === "") {
@@ -140,35 +192,36 @@ function createTask(input) {
     if (input.id && !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(input.id)) {
      throw new Error(`Invalid UUID format for task ID: ${input.id}`);
    }
-  const tasks = loadTasks();
-  
-  const task = {
-    id: input.id || uuidv4(),
-    title: input.title,
-    description: input.description || "",
-    status: "pending",
-    priority: input.priority || "medium",
-    assignedTo: input.assignedTo || null,
+   const tasks = loadTasks();
+   
+   const task = {
+     id: input.id || uuidv4(),
+     title: input.title,
+     description: input.description || "",
+     status: "pending",
+     priority: input.priority || "medium",
+     assignedTo: input.assignedTo || null,
     createdBy: input.createdBy || "unknown",
     parentTaskId: input.parentTaskId || null,
     tags: input.tags || [],
     context: input.context || {},
+    progress: input.progress !== undefined ? input.progress : 0,
     result: null,
     error: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    startedAt: null,
-    completedAt: null,
-    reportTo: input.reportTo || null,
-    metadata: input.metadata || {},
-  };
+     createdAt: new Date().toISOString(),
+     updatedAt: new Date().toISOString(),
+     startedAt: null,
+     completedAt: null,
+     reportTo: input.reportTo || null,
+     metadata: input.metadata || {},
+   };
 
-  tasks.push(task);
-  saveTasks(tasks);
-   backupTasks(tasks);
-   console.log(`[task-manager] Created task ID=${task.id}`);
-  
-  return task;
+   tasks.push(task);
+   saveTasks(tasks);
+    backupTasks(tasks);
+    console.log(`[taskmanager] Created task ID=${task.id}`);
+   
+   return task;
 }
 
 function claimTask(taskId, agentName) {
@@ -285,7 +338,8 @@ function listTasks(filter = {}) {
   });
   
   const limit = filter.limit ? parseInt(filter.limit, 10) : 50;
-  return tasks.slice(0, limit);
+  const offset = filter.offset ? parseInt(filter.offset, 10) : 0;
+  return tasks.slice(offset, offset + limit);
 }
 
 // ─── Parent–Subtask Relationship ───────────────────────────────────────
@@ -405,7 +459,7 @@ function getTask(taskId) {
    if (!task) {
      throw new Error(`Task not found: ${taskId}`);
    }
-   console.log(`[task-manager] Retrieved task ID=${task.id}`);
+   console.log(`[taskmanager] Retrieved task ID=${task.id}`);
    return task;
 }
 
@@ -488,7 +542,7 @@ function getTaskStats() {
 
 const server = new Server(
   {
-    name: "task-manager-mcp-server",
+    name: "taskmanager-mcp-server",
     version: "1.2.0",
     description: "MCP Server quản lý task cho AI agents - thay thế direct handoff từ orchestrator",
   },
@@ -577,6 +631,24 @@ Output: Task object vừa được tạo.`,
             },
           },
           required: ["title"],
+        },
+      },
+      {
+        name: "task_delete",
+        description: `Hard delete một task và tất cả subtask (đệ quy).
+Xoá vĩnh viễn khỏi JSON storage, không thể khôi phục.
+Backup được tạo trước khi xoá.
+
+Output: { deleted: Task, subtaskCount: number, subtaskIds: string[] }`,
+        inputSchema: {
+          type: "object",
+          properties: {
+            taskId: {
+              type: "string",
+              description: "ID của task cần xoá (cả subtask sẽ bị xoá theo)"
+            },
+          },
+          required: ["taskId"],
         },
       },
       {
@@ -724,8 +796,14 @@ Output: Array of Task objects.`,
               description: "Số lượng kết quả tối đa (default: 50)",
               default: "50",
             },
+            offset: {
+              type: "string",
+              description: "Bắt đầu từ index (default: 0)",
+              default: "0",
+            },
           },
-        },
+          },
+
       },
       {
         name: "task_get",
@@ -942,6 +1020,24 @@ Output: Task đã hoàn thành + thông tin reportTo.`,
         },
       },
       {
+        name: "task_empty",
+        description: `Empty/Clean the entire .task/ folder — remove ALL files and subfolders, preserving only the .task/ folder itself.
+Resets task store to a clean empty state.
+Requires confirm: true to proceed (safety guard).
+
+Output: { deletedCount: number } — number of files/folders deleted.`,
+        inputSchema: {
+          type: "object",
+          properties: {
+            confirm: {
+              type: "boolean",
+              description: "Must be true to confirm deletion of all task data",
+            },
+          },
+          required: ["confirm"],
+        },
+      },
+      {
         name: "task_server_info",
         description: "Lấy thông tin server: version, capabilities, store location, PID, tools count",
         inputSchema: { type: "object", properties: {} },
@@ -976,11 +1072,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           tags: args.tags || [],
           context: args.context || {},
           parentTaskId: args.parentTaskId || null,
-          reportTo: args.reportTo || "orchestrator",
-           metadata: args.metadata || {},
-           createdBy: args.createdBy || "unknown",
-           id: args.id,
-        });
+            reportTo: args.reportTo || "orchestrator",
+            metadata: args.metadata || {},
+            createdBy: args.createdBy || "unknown",
+            progress: args.progress !== undefined ? args.progress : undefined,
+            id: args.id,
+          });
 
         return {
           content: [{
@@ -1107,8 +1204,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
-      // ── task_cancel ──────────────────────────────────────────────────
-      case "task_cancel": {
+        // ── task_delete ──────────────────────────────────────────────────
+        case "task_delete": {
+          if (!args?.taskId) throw new McpError(ErrorCode.InvalidParams, "taskId is required");
+          const result = deleteTask(args.taskId);
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify(result, null, 2),
+            }],
+          };
+        }
+        // ── task_cancel ──────────────────────────────────────────────────
+        case "task_cancel": {
         if (!args?.taskId) throw new McpError(ErrorCode.InvalidParams, "taskId is required");
         
         const metadata = args.reason ? { cancelReason: args.reason } : {};
@@ -1203,7 +1311,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{
             type: "text",
             text: JSON.stringify({
-              name: "task-manager-mcp-server",
+              name: "taskmanager-mcp-server",
               version: "1.2.0",
               description: "MCP Server quản lý task cho AI agents",
               capabilities: { tools: {} },
@@ -1222,6 +1330,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{
             type: "text",
             text: JSON.stringify(getTaskStats(), null, 2),
+          }],
+        };
+      }
+
+      // ── task_empty ───────────────────────────────────────────────────
+      case "task_empty": {
+        const result = taskEmpty(args?.confirm);
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(result, null, 2),
           }],
         };
       }
@@ -1254,15 +1373,15 @@ async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   
-  console.error(`[task-manager] MCP Server started`);
-  console.error(`[task-manager] Task store: ${TASKS_FILE}`);
-  console.error(`[task-manager] Task store dir: ${TASK_STORE_DIR}`);
-  console.error(`[task-manager] PID: ${process.pid}`);
-  console.error(`[task-manager] Source: ${process.argv[2] ? "CLI arg" : process.env.TASK_STORE_DIR ? "env var" : "CWD fallback"}`);
-  console.error(`[task-manager] CWD: ${process.cwd()}`);
+  console.error(`[taskmanager] MCP Server started`);
+  console.error(`[taskmanager] Task store: ${TASKS_FILE}`);
+  console.error(`[taskmanager] Task store dir: ${TASK_STORE_DIR}`);
+  console.error(`[taskmanager] PID: ${process.pid}`);
+  console.error(`[taskmanager] Source: ${process.argv[2] ? "CLI arg" : process.env.TASK_STORE_DIR ? "env var" : "CWD fallback"}`);
+  console.error(`[taskmanager] CWD: ${process.cwd()}`);
 }
 
 main().catch((err) => {
-  console.error("[task-manager] Fatal error:", err);
+  console.error("[taskmanager] Fatal error:", err);
   process.exit(1);
 });
