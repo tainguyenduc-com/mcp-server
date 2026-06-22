@@ -1,4 +1,11 @@
 // serverSetup.js
+import { Server } from "@modelcontextprotocol/sdk/server";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ErrorCode,
+  McpError,
+} from "@modelcontextprotocol/sdk/types.js";
 import { createTask, deleteTask } from "./taskLifecycle.js";
 import { claimTask } from "./taskClaim.js";
 import { updateTask } from "./taskUpdate.js";
@@ -43,7 +50,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       base.inputSchema = {
         type: "object",
         properties: {
-          confirm: { type: "boolean", description: "Xác nhận thực hiện xóa", required: true }
+          confirm: { type: "boolean", description: "Xác nhận thực hiện xóa" }
         },
         required: ["confirm"]
       };
