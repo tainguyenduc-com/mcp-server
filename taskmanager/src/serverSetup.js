@@ -1,30 +1,18 @@
 // serverSetup.js
 import { Server } from "@modelcontextprotocol/sdk/server";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   ErrorCode,
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
-import {
-  createTask,
-  deleteTask,
-  emptyTasks,
-  claimTask,
-  updateTask,
-  listTasks,
-  getTask,
-  findAvailableTasks,
-  getTaskTree,
-  getSubtasks,
-  getAncestors,
-  reportTask,
-  autoUpdateParentProgress,
-  getTaskStats,
-  deleteTasksByStatus,
-} from "./taskService.js";
-import { VALID_STATUSES, VALID_PRIORITIES, VALID_TRANSITIONS, TASKS_FILE, TASK_STORE_DIR } from "./constants.js";
+import { createTask, deleteTask } from "./taskLifecycle.js";
+import { claimTask } from "./taskClaim.js";
+import { updateTask } from "./taskUpdate.js";
+import { listTasks, getTask, findAvailableTasks, getTaskStats } from "./taskQuery.js";
+import { getTaskTree, getSubtasks, getAncestors, autoUpdateParentProgress } from "./taskTree.js";
+import { reportTask } from "./taskReport.js";
+import { VALID_STATUSES, VALID_PRIORITIES, VALID_TRANSITIONS, getTasksFile, getTaskStoreDir } from "./constants.js";
 
 export const server = new Server(
   {
@@ -47,8 +35,12 @@ const minimalTools = [
   "task_cancel",
   "task_find_available",
   "task_report",
-  "task_delete_by_status",
-  "task_empty",
+  "task_delete",
+  "task_tree",
+  "task_subtasks",
+  "task_ancestors",
+  "task_server_info",
+  "task_stats",
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -58,7 +50,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       base.inputSchema = {
         type: "object",
         properties: {
-          confirm: { type: "boolean", description: "Xác nhận thực hiện xóa", required: true }
+          confirm: { type: "boolean", description: "Xác nhận thực hiện xóa" }
         },
         required: ["confirm"]
       };
@@ -190,7 +182,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           version: "1.2.0",
           description: "MCP Server quản lý task",
           capabilities: { tools: {} },
-          storePath: TASK_STORE_DIR,
+          storePath: getTaskStoreDir(),
           toolsCount: minimalTools.length,
         }, null, 2) }] };
       }

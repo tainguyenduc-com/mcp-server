@@ -3,20 +3,30 @@
   "version": "1.2.0",
   "description": "Task Manager MCP Server — quản lý task cho AI agents, hỗ trợ subtask, auto-update parent progress, dùng chung 1 task store cho tất cả agents.",
   "type": "module",
-  "main": "server.js",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node server.js",
-    "test": "node test.js"
+    "start": "node src/server.js",
+    "test": "mocha ./test/**/*.test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "uuid": "^11.1.0"
   },
-  "keywords": ["mcp", "taskmanager", "agent-orchestration", "ai-agents"],
+  "keywords": [
+    "mcp",
+    "taskmanager",
+    "agent-orchestration",
+    "ai-agents"
+  ],
   "license": "MIT",
-  "engines": {"node": ">=18 <23"},
+  "engines": {
+    "node": ">=18 <23"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/tainguyenduc/mcp-server.git"
+  },
+  "devDependencies": {
+    "mocha": "^11.7.6"
   }
 }
